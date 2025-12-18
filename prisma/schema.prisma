@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RolUsuario {
+  ADMIN
+  EMPLEADO
+}
+
+enum EstatusTicket {
+  PENDIENTE
+  LIQUIDADO
+}
+
+enum TipoItem {
+  PRODUCTO
+  SERVICIO
+}
+
+enum TipoPago {
+  ANTICIPO
+  PAGO
+  LIQUIDACION
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  OTRO
+}
+
+enum EstatusServicio {
+  RECIBIDO
+  EN_PROCESO
+  LISTO
+  ENTREGADO
+}
+
+model Sucursal {
+  id        String   @id @default(cuid())
+  nombre    String
+  codigo    String   @unique // ej: LEO, AV135
+  createdAt DateTime @default(now())
+
+  usuarios Usuario[]
+  tickets  Ticket[]
+  folio    FolioCounter?
+}
+
+model Usuario {
+  id           String     @id @default(cuid())
+  nombre       String
+  email        String     @unique
+  passwordHash String
+  rol          RolUsuario @default(EMPLEADO)
+
+  sucursalId String?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id])
+
+  tickets Ticket[] @relation("TicketsPorVendedor")
+
+  createdAt DateTime @default(now())
+}
+
+model Cliente {
+  id        String  @id @default(cuid())
+  nombre    String
+  telefono  String?
+  correo    String?
+  direccion String?
+  notas     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tickets   Ticket[]
+  servicios Servicio[]
+
+  @@index([nombre])
+  @@index([telefono])
+}
+
+model Ticket {
+  id      String        @id @default(cuid())
+  folio   String        @unique // ej: LEO-000231
+  fecha   DateTime      @default(now())
+  estatus EstatusTicket @default(PENDIENTE)
+
+  // Totales
+  subtotal  Decimal @db.Decimal(12, 2)
+  descuento Decimal @default(0) @db.Decimal(12, 2)
+  total     Decimal @db.Decimal(12, 2)
+
+  notas String?
+
+  // Relaciones
+  sucursalId String
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  vendedorId String
+  vendedor   Usuario @relation("TicketsPorVendedor", fields: [vendedorId], references: [id])
+
+  items     TicketItem[]
+  pagos     Pago[]
+  promocion Promocion?
+
+  servicios Servicio[] // si un servicio se liga al ticket
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clienteId])
+  @@index([sucursalId])
+  @@index([fecha])
+}
+
+model TicketItem {
+  id       String @id @default(cuid())
+  ticketId String
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  tipo TipoItem
+
+  categoria String?
+  modelo    String?
+  voltaje   String?
+  noSerie   String?
+  color     String?
+
+  cantidad Int @default(1)
+
+  precio  Decimal @db.Decimal(12, 2)
+  importe Decimal @db.Decimal(12, 2)
+
+  notas String?
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([noSerie])
+}
+
+model Pago {
+  id       String @id @default(cuid())
+  ticketId String
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  tipo   TipoPago   @default(PAGO)
+  metodo MetodoPago
+
+  monto      Decimal  @db.Decimal(12, 2)
+  fecha      DateTime @default(now())
+  referencia String?
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([fecha])
+}
+
+model Promocion {
+  id       String @id @default(cuid())
+  ticketId String @unique
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  descuento Decimal @default(0) @db.Decimal(12, 2)
+  obsequio  String?
+  motivo    String?
+
+  createdAt DateTime @default(now())
+}
+
+model Servicio {
+  id        String  @id @default(cuid())
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  ticketId String?
+  ticket   Ticket? @relation(fields: [ticketId], references: [id])
+
+  problema    String
+  diagnostico String?
+  solucion    String?
+
+  estatus EstatusServicio @default(RECIBIDO)
+  costo   Decimal         @default(0) @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clienteId])
+  @@index([ticketId])
+  @@index([estatus])
+}
+
+model FolioCounter {
+  sucursalId String   @id
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+
+  ultimoNumero Int @default(0)
+}
