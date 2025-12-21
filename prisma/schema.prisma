@@ -47,6 +47,7 @@ model Sucursal {
   codigo    String   @unique // ej: LEO, AV135
   createdAt DateTime @default(now())
 
+  cliente Cliente[]
   usuarios Usuario[]
   tickets  Ticket[]
   folio    FolioCounter?
@@ -74,6 +75,9 @@ model Cliente {
   correo    String?
   direccion String?
   notas     String?
+
+  sucursalId String?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

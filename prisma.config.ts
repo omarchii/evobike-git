@@ -11,9 +11,10 @@ if (!url) throw new Error("DATABASE_URL missing. Check your .env");
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-  migrations: { path: "prisma/migrations" },
-  datasource: {
-    url,
+  migrations: {
+    path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts",
   },
+  datasource: { url: process.env.DATABASE_URL! },
 });
 
