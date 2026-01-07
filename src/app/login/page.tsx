@@ -212,7 +212,7 @@ export default function LoginPage() {
                       alt="Evobike"
                       fill
                       priority
-                      className="object-contain drop-shadow-[0_30px_55px_rgba(0,0,0,0.22)]"
+                      className="object-contain translate-x-10 lg:translate-x-16 xl:translate-x-24 drop-shadow-[0_30px_55px_rgba(0,0,0,0.22)]"
                     />
                   </div>
                 </div>
